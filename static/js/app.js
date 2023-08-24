@@ -1,4 +1,4 @@
-const myMap = L.map('mapid').setView([54.1003503, -3.3053616], 6);
+const myMap = L.map('mapid').setView([54.1003503, -3.3053616], 4);
 const redIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -25,7 +25,7 @@ const allBtns = [ searchBtn, resetBtn ];
 allBtns.map((b) => b.disabled = true);
 
 let currentMarkers = [];
-let searchResultMarkers = [];
+let searchResultPolygons = [];
 let currentPolygon = null;
 
 resetBtn.onclick = function () {
@@ -38,13 +38,16 @@ resetBtn.onclick = function () {
     myMap.removeLayer(marker);
   }
 
-  for (const marker of searchResultMarkers) {
-    myMap.removeLayer(marker);
+  for (const polygon of searchResultPolygons) {
+    myMap.removeLayer(polygon);
   }
 
   currentMarkers = [];
-  searchResultMarkers = [];
+  searchResultPolygons = [];
   allBtns.map((b) => b.disabled = true);
+
+  // Hide info panel.
+  document.getElementById('infoPanel').classList.add('is-hidden');
 };
 
 searchBtn.onclick = async function () {
@@ -53,13 +56,29 @@ searchBtn.onclick = async function () {
   searchBtn.classList.add('is-loading');
   
   // Remove previous results.
-  for (const marker of searchResultMarkers) {
-    myMap.removeLayer(marker);
+  for (const polygon of searchResultPolygons) {
+    myMap.removeLayer(polygon);
   }
 
   searchResultMarkers = [];
 
+  // Hide info panel.
+  document.getElementById('infoPanel').classList.add('is-hidden');
+
   try {
+    // Do we have a polygon or a point to search with?
+    const searchRequestBody = {};
+
+    if (currentPolygon) {
+      searchRequestBody.polygon = currentPolygon.toGeoJSON();
+    } else {
+      // Get the position of the first and only marker.
+      searchRequestBody.point = { 
+        lat: currentMarkers[0].getLatLng().lat, 
+        lng: currentMarkers[0].getLatLng().lng
+      };
+    };
+
     // Call the search endpoint.
     const response = await fetch('/search', {
       method: 'POST',
@@ -67,13 +86,49 @@ searchBtn.onclick = async function () {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        polygon: currentPolygon.toGeoJSON()
-      })
+      body: JSON.stringify(searchRequestBody)
     });
 
     const responseJSON = await response.json();
-    // TODO do something!
+    
+    responseJSON.data.map((region) => {
+      const polygonCoords = region.boundaries.substring(9, region.boundaries.length - 2);
+      const latLngs = [];
+
+      for (const coords of polygonCoords.split(',')) {
+        const [ lng, lat ] = coords.split(' ');
+        latLngs.push([lat, lng]);
+      }
+
+      const regionPoly = L.polygon(latLngs, {color: 'black', weight: 1}).addTo(myMap);
+      regionPoly.extraData = {
+        name: region.name,
+        forecast: region.forecast
+      };
+      regionPoly.on('mouseover', function (e) {
+        this.setStyle({
+          color: 'green'
+        });
+
+        document.getElementById('regionName').innerHTML = this.extraData.name;
+        document.getElementById('regionData').innerHTML = `<p><b>Wind: </b>${this.extraData.forecast.wind}</p><p><b>Sea State: </b>${this.extraData.forecast.sea}</p><p><b>Weather: </b>${this.extraData.forecast.weather}</p><p><b>Visibility: </b>${this.extraData.forecast.visibility}</p>`;
+      });
+
+      regionPoly.on('mouseout', function (e) {
+        this.setStyle({
+          color: 'black'
+        });
+
+        document.getElementById('regionName').innerHTML = 'Details';
+        document.getElementById('regionData').innerHTML = '<p>Hover over a region...</p>';
+      });
+
+      searchResultPolygons.push(regionPoly);
+
+      if (searchResultPolygons.length > 0) {
+        document.getElementById('infoPanel').classList.remove('is-hidden');
+      }
+    });
   } catch (e) {
     console.log(e);
   }
@@ -92,8 +147,13 @@ function updatePolygon() {
       myMap.removeLayer(currentPolygon);
     }
     
-    currentPolygon = L.polygon(polyCoords, {color: 'red'}).addTo(myMap);
-    allBtns.map((b) => b.disabled = false);
+    currentPolygon = L.polygon(polyCoords, {color: 'red', weight: 2, fill: true, stroke: false}).addTo(myMap);
+  }
+
+  if (currentMarkers.length === 1 || currentMarkers.length > 2) {
+    searchBtn.disabled = false;
+  } else {
+    searchBtn.disabled = true;
   }
 }
 
