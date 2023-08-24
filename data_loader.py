@@ -13,9 +13,20 @@ load_dotenv()
 # Connect to Redis
 redis_client = redis.from_url(os.getenv("REDIS_URL"))
 
-# TODO check for / create / drop index
+# Drop any existing index.
+try:
+    redis_client.ft("idx:regions").dropindex(delete_documents = False)
+except:
+    # Dropping an index that doesn't exist throws an exception 
+    # but isn't an error in this case - we just want to start
+    # from a known point.
+    pass
+
+# TODO CREATE NEW INDEX WITH GENERIC COMMAND APPROACH.
+# Create a new index.
 # ft.create idx:regions on json prefix 1 region: schema $.name as name tag $.boundaries as boundaries geoshape spherical $.forecast.wind as wind text $.forecast.sea as sea text $.forecast.weather as weather text $.forecast.visibility as visibility text 
 
+# Load the shipping forecast regional data from the JSON file.
 num_loaded = 0
 
 with open ("data/shipping_forecast_regions.json", "rb") as input_file:
