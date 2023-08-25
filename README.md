@@ -20,6 +20,13 @@ You'll need to have the following installed:
 
 To run the demo, you'll need to clone the repository from GitHub, create a Python virtual environment then install the dependencies and start a Redis Stack instance.  We've provided a Docker Compose file for Redis Stack.  
 
+Begin by cloning the repository from GitHub:
+
+```
+git clone https://github.com/redis-developer/redis-polygon-search-weather-demo.git
+cd redis-polygon-search-weather-demo
+```
+
 Enter the following commands to create the virtual environment and install dependencies:
 
 ```
