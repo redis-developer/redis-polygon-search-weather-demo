@@ -42,7 +42,7 @@ If you're using Redis Stack with the Docker Compose provided, you won't need to 
 cp env.example .env
 ```
 
-If you need to change the Redis connection details (for example because your Redis Stack instance runs remotely or uses a password), edit `.env` accordingly before proceeding further.
+If you need to change the Redis connection details (for example because your Redis Stack instance runs remotely or uses a password, or you want to change the port that the backend server runs on), edit `.env` accordingly before proceeding further.
 
 The next step is to load the data into Redis Stack:
 
