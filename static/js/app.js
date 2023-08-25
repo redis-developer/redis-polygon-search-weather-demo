@@ -92,11 +92,13 @@ searchBtn.onclick = async function () {
     const responseJSON = await response.json();
     
     responseJSON.data.map((region) => {
-      const polygonCoords = region.boundaries.substring(9, region.boundaries.length - 2);
+      // Get the GeoJSON representation for the region and make 
+      // a Leaflet polygon for it, then add that to the map.
+      const polygonCoords = region.boundaries.coordinates[0];
       const latLngs = [];
 
-      for (const coords of polygonCoords.split(',')) {
-        const [ lng, lat ] = coords.split(' ');
+      for (const coords of polygonCoords) {
+        const [ lng, lat ] = coords;
         latLngs.push([lat, lng]);
       }
 
