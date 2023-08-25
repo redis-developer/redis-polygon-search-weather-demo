@@ -18,25 +18,94 @@ You'll need to have the following installed:
 
 ## Running the Demo
 
-To run the demo, you'll need to clone the repository from GitHub, create a Python virtual environment then install the dependencies and start a Redis Stack instance.  We've provided a Docker Compose file for Redis Stack.  Enter the following commands:
+To run the demo, you'll need to clone the repository from GitHub, create a Python virtual environment then install the dependencies and start a Redis Stack instance.  We've provided a Docker Compose file for Redis Stack.  
+
+Enter the following commands to create the virtual environment and install dependencies:
 
 ```
-TODO
+python3 -m venv venv
+. ./venv/bin/activate
+pip install -r requirements.txt
+```
+
+Now, start Redis Stack:
+
+```
 docker-compose up -d
 ```
 
-TODO .env file creation...
+We're using a `.env` file to store secrets such as the host and port that Redis runs on.  An example environment file `example.env` is included in this repository.
 
-Now load the data:
+If you're using Redis Stack with the Docker Compose provided, you won't need to change any values, and can just copy `env.example` to `.env`:
 
 ```
-TODO
+cp env.example .env
+```
+
+If you need to change the Redis connection details (for example because your Redis Stack instance runs remotely or uses a password), edit `.env` accordingly before proceeding further.
+
+The next step is to load the data into Redis Stack:
+
+```
+python data_loader.py --load data/shipping_forecast_regions.json
 ```
 
 You should see output similar to this:
 
 ```
-TODO
+Checking for previous index and dropping if found.
+Creating index.
+Stored region:bailey (Bailey)
+Stored region:biscay (Biscay)
+Stored region:cromarty (Cromarty)
+Stored region:dogger (Dogger)
+Stored region:dover (Dover)
+Stored region:faeroes (Faeroes)
+Stored region:fair_isle (Fair Isle)
+Stored region:fastnet (Fastnet)
+Stored region:fisher (Fisher)
+Stored region:fitzroy (Fitzroy)
+Stored region:forth (Forth)
+Stored region:forties (Forties)
+Stored region:german_bight (German Bight)
+Stored region:hebrides (Hebrides)
+Stored region:humber (Humber)
+Stored region:irish_sea (Irish Sea)
+Stored region:lundy (Lundy)
+Stored region:malin (Malin)
+Stored region:north_utsire (North Utsire)
+Stored region:plymouth (Plymouth)
+Stored region:portland (Portland)
+Stored region:rockall (Rockall)
+Stored region:shannon (Shannon)
+Stored region:sole (Sole)
+Stored region:south_east_iceland (South East Iceland)
+Stored region:south_utsire (South Utsire)
+Stored region:thames (Thames)
+Stored region:trafalgar (Trafalgar)
+Stored region:tyne (Tyne)
+Stored region:viking (Viking)
+Stored region:wight (Wight)
+Regions loaded: 31
+Done!
+```
+
+Start the Flask server application:
+
+```
+flask run
+```
+
+You should see output similar to this:
+
+```
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 253-334-353
 ```
 
 Point your browser at `http://localhost:5000` and start clicking and dragging markers to create a polygon.  
