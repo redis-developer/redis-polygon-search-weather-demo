@@ -4,7 +4,20 @@
 
 ## Introduction
 
-TODO
+This repository is a small self-contained demonstration of the Polygon Search functionality that was added in the 7.2 release of Redis Stack.
+
+For information about this release and the other new features in it, check out the [blog post](https://redis.com/blog/introducing-redis-7-2/).
+
+Using data for the 31 regions of the British [Shipping Forecast](https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/shipping-forecast), we'll look at how to use the Search capability of Redis Stack to find which shipping forecast regions fall within an area described by a polygon, and also which shipping forecast region any given point around the British Isles belongs to.
+
+This example uses the real Shipping Forecast regions, along with fixed text data for each that describes the four components of a forecast:
+
+* Wind
+* Sea State
+* Weather
+* Visibility
+
+Check out the [Shipping Forecast on Wikipedia](https://en.wikipedia.org/wiki/Shipping_Forecast) for more information about this unique maritime weather broadcast.
 
 ## Prerequisites
 
