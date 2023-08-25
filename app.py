@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from flask import Flask, render_template, request
+from geodaisy.converters import geojson_to_wkt
 import os
 import json
 import redis
@@ -24,14 +25,8 @@ def search():
     else:
         # Unpack the GeoJSON request body and get the polygon out...
         # Create a WKT polygon.
-        poly_coordinates = request.json["polygon"]["geometry"]["coordinates"][0]
-        wkt_string = "POLYGON(("
+        wkt_string = geojson_to_wkt(request.json["polygon"]["geometry"])
         geo_operator = "WITHIN"
-
-        for coords in poly_coordinates:
-            wkt_string = f"{wkt_string}{coords[0]} {coords[1]},"
-
-        wkt_string = f"{wkt_string[:-1]}))"
 
     # ft.search idx:regions "@boundaries:[WITHIN $poly]" PARAMS 2 poly 'POLYGON((-12.655691 61.48076, 0.176516 63.66576, 7.735213 59.265881, -12.655691 61.48076))' DIALECT 3 RETURN 1 name
 
