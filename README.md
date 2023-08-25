@@ -171,7 +171,7 @@ If you're using RedisInsight, start it up and add a new connection to Redis at `
 You'll see that each region contains a JSON document with the following data items in it:
 
 * `name`: The proper name for the region.
-* `boundaries`: A [Well-known Text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) Polygon representation of the boundaries of the region.  These consist of a set of longitude/latitude co-ordinate pairs.  The first and last pair must be the same to "close" the polygon.
+* `boundaries`: A [Well-known Text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) Polygon representation of the boundaries of the region.  These consist of a set of longitude/latitude co-ordinate pairs.  The first and last pair must be the same to "close" the polygon.  The search capability of Redis Stack uses the Well-known Text format to describe polygons and points.
 * `forecast`: An object containing the following keys describing the four parts of a shipping forecase for the region:
   * `wind`: Description of the wind conditions.
   * `sea`: Description of the sea state.
