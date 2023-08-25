@@ -17,13 +17,16 @@ redis_client = redis.from_url(os.getenv("REDIS_URL"))
 try:
     print("Checking for previous index and dropping if found.")
     redis_client.ft("idx:regions").dropindex(delete_documents = False)
-except:
+    print("Dropped old search index.")
+except redis.exceptions.ResponseError as e:
     # Dropping an index that doesn't exist throws an exception 
     # but isn't an error in this case - we just want to start
     # from a known point.
 
-    # TODO check for error... see trains example
-    pass
+    if not str(e).startswith("Unknown Index"):
+        print("Error:")
+        print(e)
+        os._exit(1)
 
 # Create a new index.
 print("Creating index.")
