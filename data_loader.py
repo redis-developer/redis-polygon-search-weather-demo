@@ -1,11 +1,25 @@
 from dotenv import load_dotenv
+from pathlib import Path
 from time import sleep
 
+import argparse
 import json
 import os
 import redis
 
 load_dotenv()
+
+# Parse arguments and make sure we were invoked correctly.
+arg_parser = argparse.ArgumentParser(description = "Load JSON data into Redis for search demo.")
+arg_parser.add_argument("--load", dest="data_file_name", required=True, help="File containing JSON data to load.")
+args = arg_parser.parse_args()
+
+# Check if the data file exists...
+data_file_path = Path(args.data_file_name)
+
+if not data_file_path.is_file():
+    print(f"Data file {args.data_file_name} does not exist!")
+    os._exit(1)
 
 # Connect to Redis
 redis_client = redis.from_url(os.getenv("REDIS_URL"))
@@ -31,10 +45,9 @@ print("Creating index.")
 redis_client.execute_command("FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", "SCHEMA", "$.name", "AS", "name", "TAG", "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", "$.forecast.wind", "AS", "WIND", "TEXT", "$.forecast.sea", "AS", "sea", "TEXT", "$.forecast.weather", "AS", "weather", "TEXT", "$.forecast.visibility", "AS", "visibility", "TEXT")
 
 # Load the shipping forecast regional data from the JSON file.
-# TODO make filename configurable
 num_loaded = 0
 
-with open ("data/shipping_forecast_regions.json", "r") as input_file:
+with open (args.data_file_name, "r") as input_file:
     file_data = json.load(input_file)
 
     for region in file_data["regions"]:
