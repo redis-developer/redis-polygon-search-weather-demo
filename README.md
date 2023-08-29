@@ -155,8 +155,7 @@ Take a look at one of the keys using either RedisInsight or the Redis CLI.
 Start the Redis CLI which will automatically connect to Redis at `localhost:6379` (our Docker container):
 
 ```
-docker exec -it redis-polygon-search-
-weather-demo redis-cli
+docker exec -it redis-polygon-search-weather-demo redis-cli
 ```
 
 Now use the [JSON.GET](https://redis.io/commands/json.get/) command to retrieve the document for the "Irish Sea" region:
