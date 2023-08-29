@@ -198,6 +198,8 @@ TODO
 
 If you have any questions about this, or fun ideas for how to use polygon search in your application we'd love to hear from you.  Find the Redis Developer Relations team and thousands of other Redis developers like you on the [official Redis Discord](https://discord.gg/redis).
 
+If you find a bug please [raise an issue on GitHub](https://github.com/redis-developer/redis-polygon-search-weather-demo/issues) and we'll work to fix it.
+
 ## Additional Resources
 
 If you'd like to learn more about the technologies and approaches used here, check out these links...
