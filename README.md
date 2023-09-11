@@ -409,10 +409,6 @@ Read on to see how the backend transforms the response fro Redis Stack, returns 
 
 TODO
 
-### TODO other sections...
-
-TODO
-
 ## Questions / Ideas / Feedback?
 
 If you have any questions about this, or fun ideas for how to use polygon search in your application we'd love to hear from you.  Find the Redis Developer Relations team and thousands of other Redis developers like you on the [official Redis Discord](https://discord.gg/redis).
