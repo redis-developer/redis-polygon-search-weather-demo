@@ -183,7 +183,51 @@ If you'd like to see the raw data for all 31 regions, take a look at the [`data/
 
 ### Loading the Data and Creating an Index
 
-TODO
+Data loading is handled by the `data_loader.py` script.  This connects to Redis Stack, and reads the data from the `data/shipping_forecast_regions.json` file into a Python dictionary.  This consists of one key, `regions`, whose value is a Python list of dictionaries each containing the JSON object for a region. 
+
+Each region's object gets written to Redis Stack as its own JSON document with its own Redis key (which begins with the `region:` prefix).
+
+Adding the documents to Redis Stack is simply a case of building up a string representation of the key name to use and running the [`JSON.SET`](https://redis.io/commands/json.set/) command to store the object.  We get the name/path to the data file from the command line arguments:
+
+```python
+with open (args.data_file_name, "r") as input_file:
+    file_data = json.load(input_file)
+
+    for region in file_data["regions"]:
+        redis_key = f"region:{region['name'].replace(' ', '_').lower()}"
+        redis_client.json().set(redis_key, "$", region)
+        print(f"Stored {redis_key} ({region['name']})")
+```
+
+The data loader script also creates the search index.  It first deletes any previous index definition, then runs the [`FT.CREATE`](https://redis.io/commands/ft.create/) command:
+
+```python
+redis_client.execute_command(
+  "FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", 
+  "SCHEMA", 
+  "$.name", "AS", "name", "TAG", 
+  "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", 
+  "$.forecast.wind", "AS", "WIND", "TEXT", 
+  "$.forecast.sea", "AS", "sea", "TEXT", 
+  "$.forecast.weather", "AS", "weather", "TEXT", 
+  "$.forecast.visibility", "AS", "visibility", "TEXT"
+)
+```
+
+The schema tells Redis Stack's Search capability to index the data as follows:
+
+* `name`: `TAG` (exact matches)
+* `boundaries`: `GEOSHAPE SPHERICAL` (this is a new indexing type in the 7.2 release. `GEOSHAPE` tells Search to expect the value of this field to be in Well-known text format and `SPHERICAL` tells it that we are using the geographical longitude, latitude co-ordinate system)
+* `forecast.wind`: `TEXT` (full text search)
+* `forecast.sea`: `TEXT` (full text search)
+* `forecast.weather`: `TEXT` (full text search)
+* `forecast.visibility`: `TEXT` (full text search)
+
+The front end doesn't currently allow for searching by anythine other than `boundaries` but we've indexed the other fields in case we want to use them in future.
+
+Note that the order of creating the index and loading the documents doesn't matter.  In this example, we're creating the index first but it could be done the other way around.  The Search capability of Redis Stack will index documents for us from the moment the index is created, then track changes in the indexed area of the keyspace.  It automatically adds, updates and deletes index entries as changes occur to tracked documents.
+
+Note also that we're using the generic `execute_command` function here as redis-py doesn't yet support the `GEOSHAPE` syntax in its more idiomatic `ft("index name").create_index` implementation.  I'll revisit this code when this changes.
 
 ### Serving a Map and Defining the Search Polygon
 
