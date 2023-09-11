@@ -231,7 +231,63 @@ Note also that we're using the generic `execute_command` function here as redis-
 
 ### Serving a Map and Defining the Search Polygon
 
-TODO
+The front end uses [Leaflet maps](https://leafletjs.com/) with the [OpenStreetMap](https://www.openstreetmap.org/) tile layer.  It's beyond the scope of this document to explain how this works - if you're curious check out Leaflet's [quick start](https://leafletjs.com/examples/quick-start/).  At a high level, we load the JavaScript and configure a map to appear in a given `div` on the page by providing the ID of the `div`, a lat/long centre point for the map and an initial zoom level:
+
+```javascript
+const myMap = L.map('mapid').setView([54.1003503, -3.3053616], 4);
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
+  {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }
+).addTo(myMap);
+```
+
+We also need a coloured marker for the map - I'm using red ones for the points of the user's search polygon that they'll draw.  We're using off the shelf marker images, configured like this:
+
+```
+const redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+```
+
+We need the user to be able to click on the map, and to drop a marker where they click. The markers should be movable after they've been placed at their initial location, and when there are three or more of them we need to draw a polygon on the map whose points are the locations of all of the markers.
+
+Leaflet makes this fairly easy. Detecting clicks on the map is handed by an event listener:
+
+```javascript
+myMap.on('click', (e) => {
+  // Code to handle event here...
+  // Lat/Long that was clicked is available as e.latlng
+});
+```
+
+Whenever there's a click on the map, we add a marker like so:
+
+```javascript
+const newMarker = L.marker(e.latlng, { 
+  icon: redIcon, 
+  draggable: true 
+});
+
+newMarker.addTo(myMap);
+```
+
+The marker is configured to be draggable... whenever it moves, we'll need to know about that and that's a simple matter of adding an event handler:
+
+```javascript
+// Run the updatePolygon function whenever this marker moves.
+newMarker.on('move', () => updatePolygon());
+```
+
+TODO when a marker is first added...
 
 ### TODO other sections...
 
