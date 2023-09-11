@@ -364,7 +364,50 @@ const response = await fetch('/search', {
 const responseJSON = await response.json();
 ```
 
-TODO... describe the backend process...
+To see what happens next, we need to head over to the backend Python code in `app.py`.  This is a pretty standard [Flask](https://flask.palletsprojects.com/) web application.  `POST` requests to the `search` endpoint are handled by the `search` function:
+
+```python
+@app.route("/search", methods = ["POST"])
+def search():
+    wkt_string = ""
+    geo_operator = ""
+
+    # See if we got a point or a polygon search...
+    if "point" in request.json:
+        # Get the lat/lng and create a WKT point.
+        wkt_string=f"POINT({request.json['point']['lng']} {request.json['point']['lat']})"
+        geo_operator = "CONTAINS"
+    else:
+        # Unpack the GeoJSON request body and get the polygon out...
+        # and turn it into a WKT string representation.
+        shape = from_geojson(json.dumps(request.json["polygon"]["geometry"]))
+        wkt_string = to_wkt(shape)
+        geo_operator = "WITHIN"
+```
+
+Depending on the contents of the payload, the code creates the Well-known text format for a point or a polygon in `wkt_string`.
+
+When a point was provided, we set `geo_operator` to `CONTAINS` as we're looking for documents in Redis Stack whose geometry contains the point specified.  When a polygon was provided, `geo_operator` is set to `WITHIN` as we're now looking for documents in Redis Stack whose geometry falls within the polygon specified.
+
+Once these values have been set, we can then run the search command:
+
+```python
+    search_response = redis_client.execute_command(
+        "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
+    )
+```
+
+Here we're either saying "find me the documents whose `boundaries` field contains a polygon that our point is in" or "find me the documents whose `boundaries` field is contained within the polygon passed in".  We're also using the `LIMIT` clause to ask for the first 100 matches.  In this lower level interface, we also have to specify `DIALECT 3` (or greater) to use the correct search syntax dialect for polygon search.
+
+In the first case we'll get 0 or 1 results, in the second we could get anything between 0 and 31 results (there are a total of 31 regions in the data file).
+
+The polygon search syntax will be supported directly by the `ft("index name").search` function in redis-py, and I'll revisit this code and update / simplify it accordingly.
+
+Read on to see how the backend transforms the response fro Redis Stack, returns it to the front end, and how the weather regions that match get added as polygons on the map...
+
+### Displaying Search Results on the Map
+
+TODO
 
 ### TODO other sections...
 
