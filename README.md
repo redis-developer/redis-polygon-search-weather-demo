@@ -320,9 +320,51 @@ Then all that remains is to remove any existing previous polygon, add the new on
 
 This function is called any time a marker is added to the map, or an existing marker is moved.
 
-TODO buttons?
+### Searching for Weather Regions that meet the Criteria
 
-TODO
+There are two separate search cases for this application:
+
+1. When there's a single marker on the map, search for the weather region that contains the point described by that marker.
+2. When there are more than 2 markers on the map, search for the weather regions that fall within the polygon described by those markers.
+
+Let's begin by looking at how the data is sent to the backend.  In both cases, this begins with the user clicking the "Search" button.  Before sending a search request to the backend, we need to know if we're sending a single point or a polygon and store the appropriate information in a `searchBody` object we'll use later:
+
+```javascript
+// Do we have a polygon or a point to search with?
+const searchRequestBody = {};
+
+if (currentPolygon) {
+  searchRequestBody.polygon = currentPolygon.toGeoJSON();
+} else {
+  // Get the position of the first and only marker.
+  searchRequestBody.point = { 
+    lat: currentMarkers[0].getLatLng().lat, 
+    lng: currentMarkers[0].getLatLng().lng
+  };
+};
+```
+
+If we had enough markers on the map to have drawn a polygon, we use the `toGeoJSON` function that's built in to Leaflet's Polygon object.  This gives us a JSON representation of the polygon's co-ordinates.  While this isn't the Well-known Text format that we'll need to perform the actual search in the backend, it's a format that can be easily translated on the server.  We store it in the `searchRequestBody` object as a key named `polygon`.
+
+If there wasn't currently a polygon drawn on the map, we know that there's just a single marker on the map at this time.  This means we need to initiate a search for "which weather region does this point fall in".  In this case, we grab the latitude and longitude of the marker and store those in the `searchRequestBody` object as a key names `point`.
+
+Here's how we then make a `POST` request to the backend to ask it to perform the search (source contained in `static/js/app.js`):
+
+```javascript
+// Call the search endpoint.
+const response = await fetch('/search', {
+  method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(searchRequestBody)
+});
+
+const responseJSON = await response.json();
+```
+
+TODO... describe the backend process...
 
 ### TODO other sections...
 
