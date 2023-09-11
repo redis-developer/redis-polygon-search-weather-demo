@@ -392,9 +392,9 @@ When a point was provided, we set `geo_operator` to `CONTAINS` as we're looking 
 Once these values have been set, we can then run the search command:
 
 ```python
-    search_response = redis_client.execute_command(
-        "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
-    )
+search_response = redis_client.execute_command(
+    "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
+)
 ```
 
 Here we're either saying "find me the documents whose `boundaries` field contains a polygon that our point is in" or "find me the documents whose `boundaries` field is contained within the polygon passed in".  We're also using the `LIMIT` clause to ask for the first 100 matches.  In this lower level interface, we also have to specify `DIALECT 3` (or greater) to use the correct search syntax dialect for polygon search.
