@@ -287,7 +287,42 @@ The marker is configured to be draggable... whenever it moves, we'll need to kno
 newMarker.on('move', () => updatePolygon());
 ```
 
-TODO when a marker is first added...
+Whenever a new marker is first added, we also run the `updatePolygon` function to determine if we should draw a polygon or update an existing one. The markers are also tracked by adding them to a `currentMarkers` array - used to clear them from the map when the user resets the state.
+
+The `updateMarker` function handles:
+
+* When to draw the polygon.
+* Updating it as markers are moved around.
+
+Let's see how it does this...
+
+```javascript
+function updatePolygon() {
+  if (currentMarkers.length > 2) {
+    const polyCoords = currentMarkers.map((marker) => [ 
+      marker.getLatLng().lat, 
+      marker.getLatLng().lng 
+    ]);
+
+    if (currentPolygon) {
+      myMap.removeLayer(currentPolygon);
+    }
+    
+    currentPolygon = L.polygon(polyCoords, {color: 'red', weight: 2, fill: true, stroke: false}).addTo(myMap);
+  }
+}
+```
+Remember that each marker was added to the `currentMarkers` array on creation. The first thing to do is to check the length of this array... if there's 3 or more markers, then there's something to do (adding a polygon with 1 or 2 points doesn't make sense).
+
+Once we have at least 3 markers, we can grab their co-ordinates and add a [Leaflet polygon](https://leafletjs.com/reference.html#polygon) to the map. The constructor for this takes an array of `[lat, lng]` pairs, so we create one of those using `map` over each marker in the `currentMarkers` array.
+
+Then all that remains is to remove any existing previous polygon, add the new one setting some styles as we go, and keep a reference to it in the `currentPolygon` variable.
+
+This function is called any time a marker is added to the map, or an existing marker is moved.
+
+TODO buttons?
+
+TODO
 
 ### TODO other sections...
 
