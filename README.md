@@ -79,32 +79,7 @@ Stored region:bailey (Bailey)
 Stored region:biscay (Biscay)
 Stored region:cromarty (Cromarty)
 Stored region:dogger (Dogger)
-Stored region:dover (Dover)
-Stored region:faeroes (Faeroes)
-Stored region:fair_isle (Fair Isle)
-Stored region:fastnet (Fastnet)
-Stored region:fisher (Fisher)
-Stored region:fitzroy (Fitzroy)
-Stored region:forth (Forth)
-Stored region:forties (Forties)
-Stored region:german_bight (German Bight)
-Stored region:hebrides (Hebrides)
-Stored region:humber (Humber)
-Stored region:irish_sea (Irish Sea)
-Stored region:lundy (Lundy)
-Stored region:malin (Malin)
-Stored region:north_utsire (North Utsire)
-Stored region:plymouth (Plymouth)
-Stored region:portland (Portland)
-Stored region:rockall (Rockall)
-Stored region:shannon (Shannon)
-Stored region:sole (Sole)
-Stored region:south_east_iceland (South East Iceland)
-Stored region:south_utsire (South Utsire)
-Stored region:thames (Thames)
-Stored region:trafalgar (Trafalgar)
-Stored region:tyne (Tyne)
-Stored region:viking (Viking)
+...
 Stored region:wight (Wight)
 Regions loaded: 31
 Done!
@@ -411,11 +386,64 @@ As we're using the generic `execute_command` function in redis-py at the moment,
 
 Here's what the response looks like for now:
 
+```
+[
+  2, 
+  'region:lundy', 
+  [
+    '$', 
+    '[
+      {
+        "name":"Lundy",
+        "boundaries":"POLYGON((-5.6689453125 50.12057809796008,...))",
+        "forecast": {
+          "wind":"West or northwest 3 to 5.",
+          "sea":"Smooth or slight elsewhere.",
+          "weather":"Showers, perhaps thundery later.",
+          "visibility":"Good, occasionally poor."
+        }
+      }
+    ]'
+  ], 
+  'region:plymouth', 
+  [
+    '$',
+    ...
+  ]
+]
+```
+
 TODO print the response from the Python backend and show it here...
 
-TODO what happens to it...
+The code transforms the search response from Redis Stack into a format that's easier for the front end to work with - an array of objects. The front end receives the following JSON (the format of the `boundaries` key being the GeoJSON representation of a polygon):
 
-TODO what format does it go back to the front end as.
+```json
+{
+  "data": [
+    {
+      "name": "Lundy", 
+      "boundaries": {
+        "type": "Polygon", 
+        "coordinates": [
+          [
+            [-5.6689453125, 50.12057809796008], 
+            [-6.78955078125, 50.17689812200107], 
+            [-6.61376953125, 52.214338608258224], 
+            ...
+          ]
+        ]
+      }, 
+      "forecast": {
+        "wind": "West or northwest 3 to 5.", 
+        "sea": "Smooth or slight elsewhere.", 
+        "weather": "Showers, perhaps thundery later.", 
+        "visibility": "Good, occasionally poor."
+      }
+    },
+    ...
+  ]
+}
+```
 
 ## Questions / Ideas / Feedback?
 
