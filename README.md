@@ -407,7 +407,15 @@ Read on to see how the backend transforms the response fro Redis Stack, returns 
 
 ### Displaying Search Results on the Map
 
-TODO
+As we're using the generic `execute_command` function in redis-py at the moment, the search results are delivered to us in the same format that Redis stack uses (RESP).  In future versions of redis-py with support for `GEOSHAPE` searches, this can be replaced with the more idiomatic `ft("index name").search` command that will transform the response into a more useful format for us automatically.  I'll revisit this project when that is released.
+
+Here's what the response looks like for now:
+
+TODO print the response from the Python backend and show it here...
+
+TODO what happens to it...
+
+TODO what format does it go back to the front end as.
 
 ## Questions / Ideas / Feedback?
 
