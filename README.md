@@ -445,6 +445,64 @@ The code transforms the search response from Redis Stack into a format that's ea
 }
 ```
 
+Let's go back to the JavaScript front end to see what it does with this JSON response.  Recall that in the front end we used the `fetch` API to make a `POST` request to `/search`, passing it our point or polygon as the input.  Picking up where we left off, here's the code that gets the above JSON in response:
+
+```javascript
+const responseJSON = await response.json();
+```
+
+For each region in the `data` array returned (if no regions match we just get an empty array), we need to draw that region as a polygon on the map.  We'll also add a `mouseover` event to that polygon so we can display the weather forecast, sea state, wind conditions and visibility for the region.
+
+This is fairly simple with Leaflet's API.  As we potentially have multiple polygons to render, we'll use JavaScript's `map` function to get the coordinates for each from the JSON response, and draw an appropriate polygon on the map:
+
+```javascript
+responseJSON.data.map((region) => {
+    // Get the GeoJSON representation for the region and make 
+    // a Leaflet polygon for it, then add that to the map.
+    const polygonCoords = region.boundaries.coordinates[0];
+    const latLngs = [];
+
+    for (const coords of polygonCoords) {
+      const [ lng, lat ] = coords;
+      latLngs.push([lat, lng]);
+    }
+
+    const regionPoly = L.polygon(latLngs, {color: 'black', weight: 1}).addTo(myMap);
+
+    ...
+```
+
+We wanted to display the forecast information for the region in an area of the page reserved for that whenever the user mouses over the polygon on the map.  Let's store that in the polygon object for later reference:
+
+```javascript
+regionPoly.extraData = {
+  name: region.name,
+  forecast: region.forecast
+};
+```
+
+The final part of displaying the data is to add `mouseover` and `mouseout` events to highlight the region's polygon in a different colour then display and clear the extra data:
+
+```javascript
+regionPoly.on('mouseover', function (e) {
+  this.setStyle({
+    color: 'green'
+  });
+
+  document.getElementById('regionName').innerHTML = this.extraData.name;
+  document.getElementById('regionData').innerHTML = `<p><b>Wind: </b>${this.extraData.forecast.wind}</p><p><b>Sea State: </b>${this.extraData.forecast.sea}</p><p><b>Weather: </b>${this.extraData.forecast.weather}</p><p><b>Visibility: </b>${this.extraData.forecast.visibility}</p>`;
+});
+
+regionPoly.on('mouseout', function (e) {
+  this.setStyle({
+    color: 'black'
+  });
+
+  document.getElementById('regionName').innerHTML = 'Details';
+  document.getElementById('regionData').innerHTML = '<p>Hover over a region...</p>';
+});
+```
+
 ## Questions / Ideas / Feedback?
 
 If you have any questions about this, or fun ideas for how to use polygon search in your application we'd love to hear from you.  Find the Redis Developer Relations team and thousands of other Redis developers like you on the [official Redis Discord](https://discord.gg/redis).
