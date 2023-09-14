@@ -146,7 +146,7 @@ You'll see that each region contains a JSON document with the following data ite
 
 * `name`: The proper name for the region.
 * `boundaries`: A [Well-known Text](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) Polygon representation of the boundaries of the region.  These consist of a set of longitude/latitude co-ordinate pairs.  The first and last pair must be the same to "close" the polygon.  The search capability of Redis Stack uses the Well-known Text format to describe polygons and points.
-* `forecast`: An object containing the following keys describing the four parts of a shipping forecase for the region:
+* `forecast`: An object containing the following keys describing the four parts of a shipping forecast for the region:
   * `wind`: Description of the wind conditions.
   * `sea`: Description of the sea state.
   * `weather`: General overview of the weather.
@@ -198,7 +198,7 @@ The schema tells Redis Stack's Search capability to index the data as follows:
 * `forecast.weather`: `TEXT` (full text search)
 * `forecast.visibility`: `TEXT` (full text search)
 
-The front end doesn't currently allow for searching by anythine other than `boundaries` but we've indexed the other fields in case we want to use them in future.
+The front end doesn't currently allow for searching by anything other than `boundaries` but we've indexed the other fields in case we want to use them in future.
 
 Note that the order of creating the index and loading the documents doesn't matter.  In this example, we're creating the index first but it could be done the other way around.  The Search capability of Redis Stack will index documents for us from the moment the index is created, then track changes in the indexed area of the keyspace.  It automatically adds, updates and deletes index entries as changes occur to tracked documents.
 
@@ -412,8 +412,6 @@ Here's what the response looks like for now:
   ]
 ]
 ```
-
-TODO print the response from the Python backend and show it here...
 
 The code transforms the search response from Redis Stack into a format that's easier for the front end to work with - an array of objects. The front end receives the following JSON (the format of the `boundaries` key being the GeoJSON representation of a polygon):
 
