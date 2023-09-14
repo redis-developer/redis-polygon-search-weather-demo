@@ -103,11 +103,14 @@ Press CTRL+C to quit
  * Debugger PIN: 253-334-353
 ```
 
-Point your browser at `http://localhost:5000` and start clicking and dragging markers to create a polygon.  
+Point your browser at `http://localhost:5000` - you'll see a map of the United Kingdom.  
 
-TODO further instructions...
+You can now either:
 
-Use the "Reset" button to clear your polygon and any matching search results.
+* Click once on the map in the sea around the UK, then click the "Search" button.  This will search for the weather region that contains your marker and add it to the map.  Hover over the region polygon to see details for that region.
+* Click at least three times (or as many more as you like) anywhere on the map.  After you drop your third marker, a search area polygon appears.  Add more markers and drag existing ones until you are happy with the search polygon, then click the "Search button".  This will search for weather regions that are **wholly contained** within your search polygon and display them on the map.  Hover over a region's polygon to see details for that region.
+
+Start a new search by clicking the "Reset" button to clear the search polygon and any results.
 
 When you're finished using the demo, stop the Flask server using `Ctrl-C`, then turn off the Docker container like so:
 
