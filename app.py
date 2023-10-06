@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from flask import Flask, render_template, request
+from redis.commands.search.query import Query
 from shapely import from_geojson, from_wkt, to_geojson, to_wkt
 import os
 import json
@@ -36,15 +37,24 @@ def search():
     # Point in polygon... 55.128996, -1.159153
     # ft.search idx:regions "@boundaries:[CONTAINS $point]" PARAMS 2 point 'POINT(-1.159153 55.128996)' DIALECT 3 RETURN 1 name
 
+    # TODO CHANGE THIS TO BE A PROPER FT.SEARCH AND PARSE 
+    # OUT THE RESPONSE...
     search_response = redis_client.execute_command(
         "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
     )
 
+    search_response = redis_client.ft("idx:regions").search(
+        Query(f"@boundaries:[{geo_operator} $wkt]").dialect(3).paging(0, 100),
+        query_params = { "wkt": wkt_string }
+    )
+
     matching_regions = []
 
-    if search_response[0] > 0:
-        for region_response in search_response[2::2]:
-            region = json.loads(region_response[1])[0]
+    if len(search_response.docs) > 0:
+        for doc in search_response.docs:
+            region = json.loads(doc.json)[0]
+            print(region)
+            print(type(region))
 
             # Convert WKT polygon in "boundaries" to a 
             # GeoJSON representation to send to the front end.
