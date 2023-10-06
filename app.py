@@ -37,12 +37,6 @@ def search():
     # Point in polygon... 55.128996, -1.159153
     # ft.search idx:regions "@boundaries:[CONTAINS $point]" PARAMS 2 point 'POINT(-1.159153 55.128996)' DIALECT 3 RETURN 1 name
 
-    # TODO CHANGE THIS TO BE A PROPER FT.SEARCH AND PARSE 
-    # OUT THE RESPONSE...
-    search_response = redis_client.execute_command(
-        "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
-    )
-
     search_response = redis_client.ft("idx:regions").search(
         Query(f"@boundaries:[{geo_operator} $wkt]").dialect(3).paging(0, 100),
         query_params = { "wkt": wkt_string }
@@ -53,8 +47,6 @@ def search():
     if len(search_response.docs) > 0:
         for doc in search_response.docs:
             region = json.loads(doc.json)[0]
-            print(region)
-            print(type(region))
 
             # Convert WKT polygon in "boundaries" to a 
             # GeoJSON representation to send to the front end.
