@@ -1,11 +1,16 @@
 from dotenv import load_dotenv
 from pathlib import Path
 from time import sleep
+from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+from redis.commands.search.field import TextField, TagField, GeoShapeField
 
 import argparse
 import json
 import os
 import redis
+
+WEATHER_KEY_PREFIX = "region"
+WEATHER_INDEX_NAME = "idx:regions"
 
 load_dotenv()
 
@@ -27,7 +32,7 @@ redis_client = redis.from_url(os.getenv("REDIS_URL"))
 # Drop any existing index.
 try:
     print("Checking for previous index and dropping if found.")
-    redis_client.ft("idx:regions").dropindex(delete_documents = False)
+    redis_client.ft(WEATHER_INDEX_NAME).dropindex(delete_documents = False)
     print("Dropped old search index.")
 except redis.exceptions.ResponseError as e:
     # Dropping an index that doesn't exist throws an exception 
@@ -42,7 +47,20 @@ except redis.exceptions.ResponseError as e:
 # Create a new index.
 print("Creating index.")
 
-redis_client.execute_command("FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", "SCHEMA", "$.name", "AS", "name", "TAG", "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", "$.forecast.wind", "AS", "WIND", "TEXT", "$.forecast.sea", "AS", "sea", "TEXT", "$.forecast.weather", "AS", "weather", "TEXT", "$.forecast.visibility", "AS", "visibility", "TEXT")
+redis_client.ft(WEATHER_INDEX_NAME).create_index(
+    [
+        TagField("$.name", as_name = "name"),
+        GeoShapeField("$.boundaries", GeoShapeField.SPHERICAL, as_name = "boundaries"),
+        TextField("$.forecast.wind", as_name = "wind"),
+        TextField("$.forecast.sea", as_name = "sea"),
+        TextField("$.forecast.weather", as_name = "weather"),
+        TextField("$.forecast.visibility", as_name = "visibility")
+    ],
+    definition = IndexDefinition(
+        index_type = IndexType.JSON,
+        prefix = [ f"{WEATHER_KEY_PREFIX}:" ]
+    )
+)
 
 # Load the shipping forecast regional data from the JSON file.
 num_loaded = 0
@@ -51,7 +69,7 @@ with open (args.data_file_name, "r") as input_file:
     file_data = json.load(input_file)
 
     for region in file_data["regions"]:
-        redis_key = f"region:{region['name'].replace(' ', '_').lower()}"
+        redis_key = f"{WEATHER_KEY_PREFIX}:{region['name'].replace(' ', '_').lower()}"
         redis_client.json().set(redis_key, "$", region)
         num_loaded += 1
         print(f"Stored {redis_key} ({region['name']})")
