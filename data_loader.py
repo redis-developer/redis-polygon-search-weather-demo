@@ -42,7 +42,7 @@ except redis.exceptions.ResponseError as e:
 # Create a new index.
 print("Creating index.")
 
-redis_client.execute_command("FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", "SCHEMA", "$.name", "AS", "name", "TAG", "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", "$.forecast.wind", "AS", "WIND", "TEXT", "$.forecast.sea", "AS", "sea", "TEXT", "$.forecast.weather", "AS", "weather", "TEXT", "$.forecast.visibility", "AS", "visibility", "TEXT")
+redis_client.execute_command("FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", "SCHEMA", "$.name", "AS", "name", "TAG", "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", "$.forecast.wind", "AS", "wind", "TEXT", "$.forecast.sea", "AS", "sea", "TEXT", "$.forecast.weather", "AS", "weather", "TEXT", "$.forecast.visibility", "AS", "visibility", "TEXT")
 
 # Load the shipping forecast regional data from the JSON file.
 num_loaded = 0
