@@ -2,7 +2,7 @@
 
 ![Polygon search example in action](screenshots/polyweather.gif)
 
-Watch the recording of our Polygon Search live stream video on YouTube [here](https://www.youtube.com/watch?v=CegTSglMUks).
+Watch the recording of our Polygon Search live stream video on YouTube [here](https://www.youtube.com/watch?v=CegTSglMUks).  Note that the code has been tidied up a little since this was recorded -- it no longer uses redis-py's `execute_command` when performing search queries: it uses the more idiomatic interface instead.
 
 ## Introduction
 
@@ -372,53 +372,31 @@ When a point was provided, we set `geo_operator` to `CONTAINS` as we're looking 
 Once these values have been set, we can then run the search command:
 
 ```python
-search_response = redis_client.execute_command(
-    "FT.SEARCH", "idx:regions", f"@boundaries:[{geo_operator} $wkt]", "PARAMS", "2", "wkt", wkt_string, "DIALECT", "3", "LIMIT", "0", "100"
+search_response = redis_client.ft("idx:regions").search(
+    Query(f"@boundaries:[{geo_operator} $wkt]").dialect(3).paging(0, 100),
+    query_params = { "wkt": wkt_string }
 )
 ```
 
-Here we're either saying "find me the documents whose `boundaries` field contains a polygon that our point is in" or "find me the documents whose `boundaries` field is contained within the polygon passed in".  We're also using the `LIMIT` clause to ask for the first 100 matches.  In this lower level interface, we also have to specify `DIALECT 3` (or greater) to use the correct search syntax dialect for polygon search.
+Here we're either saying "find me the documents whose `boundaries` field contains a polygon that our point is in" or "find me the documents whose `boundaries` field is contained within the polygon passed in".  We're also using the `paging` clause to ask for the first 100 matches.  Note that we also have to specify `dialect(3)` (or greater) to use the correct search syntax dialect for polygon search.
 
 In the first case we'll get 0 or 1 results, in the second we could get anything between 0 and 31 results (there are a total of 31 regions in the data file).
 
-The polygon search syntax will be supported directly by the `ft("index name").search` function in redis-py, and I'll revisit this code and update / simplify it accordingly.
-
-Read on to see how the backend transforms the response fro Redis Stack, returns it to the front end, and how the weather regions that match get added as polygons on the map...
+Read on to see how the backend transforms the response from Redis Stack, returns it to the front end, and how the weather regions that match get added as polygons on the map...
 
 ### Displaying Search Results on the Map
 
-As we're using the generic `execute_command` function in redis-py at the moment, the search results are delivered to us in the same format that Redis stack uses (RESP).  In future versions of redis-py with support for `GEOSHAPE` searches, this can be replaced with the more idiomatic `ft("index name").search` command that will transform the response into a more useful format for us automatically.  I'll revisit this project when that is released.
+Our search call returns a `Result` object that contains a list of matching `Document` objects - one for each matching weather region.  
 
-Here's what the response looks like for now:
+Here's what the response looks like when printed out:
 
 ```
-[
-  2, 
-  'region:lundy', 
-  [
-    '$', 
-    '[
-      {
-        "name":"Lundy",
-        "boundaries":"POLYGON((-5.6689453125 50.12057809796008,...))",
-        "forecast": {
-          "wind":"West or northwest 3 to 5.",
-          "sea":"Smooth or slight elsewhere.",
-          "weather":"Showers, perhaps thundery later.",
-          "visibility":"Good, occasionally poor."
-        }
-      }
-    ]'
-  ], 
-  'region:plymouth', 
-  [
-    '$',
-    ...
-  ]
-]
+Result{6 total, docs: [Document {'id': 'region:dogger', 'payload': None, 'json': '[{"name":"Dogger","boundaries":"POLYGON((0.98876953125 54.226707764386695,-0.5712890625 55.801280971180454,4.350585937499999 55.96150096848812,4.41650390625 54.3549556895541,0.98876953125 54.226707764386695))","forecast":{"wind":"South becoming cyclonic 3 to 5, then west 2 to 4 later.","sea":"Smooth or slight.","weather":"Rain or thundery showers.","visibility":"Good, occasionally poor."}}]'}, Document {'id': 'region:fisher'...
 ```
 
-The code transforms the search response from Redis Stack into a format that's easier for the front end to work with - an array of objects. The front end receives the following JSON (the format of the `boundaries` key being the GeoJSON representation of a polygon):
+The code transforms the response from Redis Stack into a format that's easier for the front end to work with - an array of objects. It does this by looping over the list of `Document` objects returned and using the raw JSON representation contained in each.
+
+The front end receives the following JSON (the format of the `boundaries` key being the GeoJSON representation of a polygon - this is generated using the Shapely library from the WKT representation returned by Redis Stack):
 
 ```json
 {
