@@ -2,7 +2,7 @@
 
 ![Polygon search example in action](screenshots/polyweather.gif)
 
-Watch the recording of our Polygon Search live stream video on YouTube [here](https://www.youtube.com/watch?v=CegTSglMUks).  Note that the code has been tidied up a little since this was recorded -- it no longer uses redis-py's `execute_command` when performing search queries: it uses the more idiomatic interface instead.
+Watch the recording of our Polygon Search live stream video on YouTube [here](https://www.youtube.com/watch?v=CegTSglMUks).  Note that the code has been tidied up a little since this was recorded -- redis-py was updated so the code no longer uses `execute_command` when performing search queries and creating the search index: it uses the more idiomatic interface instead.
 
 ## Introduction
 
@@ -182,15 +182,19 @@ with open (args.data_file_name, "r") as input_file:
 The data loader script also creates the search index.  It first deletes any previous index definition, then runs the [`FT.CREATE`](https://redis.io/commands/ft.create/) command:
 
 ```python
-redis_client.execute_command(
-  "FT.CREATE", "idx:regions", "ON", "JSON", "PREFIX", "1", "region:", 
-  "SCHEMA", 
-  "$.name", "AS", "name", "TAG", 
-  "$.boundaries", "AS", "boundaries", "GEOSHAPE", "SPHERICAL", 
-  "$.forecast.wind", "AS", "WIND", "TEXT", 
-  "$.forecast.sea", "AS", "sea", "TEXT", 
-  "$.forecast.weather", "AS", "weather", "TEXT", 
-  "$.forecast.visibility", "AS", "visibility", "TEXT"
+redis_client.ft(WEATHER_INDEX_NAME).create_index(
+    [
+        TagField("$.name", as_name = "name"),
+        GeoShapeField("$.boundaries", GeoShapeField.SPHERICAL, as_name = "boundaries"),
+        TextField("$.forecast.wind", as_name = "wind"),
+        TextField("$.forecast.sea", as_name = "sea"),
+        TextField("$.forecast.weather", as_name = "weather"),
+        TextField("$.forecast.visibility", as_name = "visibility")
+    ],
+    definition = IndexDefinition(
+        index_type = IndexType.JSON,
+        prefix = [ f"{WEATHER_KEY_PREFIX}:" ]
+    )
 )
 ```
 
@@ -206,8 +210,6 @@ The schema tells Redis Stack's Search capability to index the data as follows:
 The front end doesn't currently allow for searching by anything other than `boundaries` but we've indexed the other fields in case we want to use them in future.
 
 Note that the order of creating the index and loading the documents doesn't matter.  In this example, we're creating the index first but it could be done the other way around.  The Search capability of Redis Stack will index documents for us from the moment the index is created, then track changes in the indexed area of the keyspace.  It automatically adds, updates and deletes index entries as changes occur to tracked documents.
-
-Note also that we're using the generic `execute_command` function here as redis-py doesn't yet support the `GEOSHAPE` syntax in its more idiomatic `ft("index name").create_index` implementation.  I'll revisit this code when this changes.
 
 ### Serving a Map and Defining the Search Polygon
 
